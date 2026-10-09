@@ -16,18 +16,44 @@ export interface PhilosophicalPremise {
   isPinned?: boolean;
 }
 
+export type QueryClassificationType =
+  | 'Consulta Histórica'
+  | 'Tese Filosófica'
+  | 'Análise Conceitual'
+  | 'Questão Científica'
+  | 'Pergunta Biográfica'
+  | 'Pergunta de Conhecimento Geral'
+  | 'Dilema Ético & Humano';
+
+export type AudienceProfile =
+  | 'Auto (Dedução Dinâmica)'
+  | 'Jovem Pensador (Criança / Jovem)'
+  | 'Jovem Aprendiz (Estudante / Juvenil)'
+  | 'Cidadão em Reflexão (Vida Prática & Ética)'
+  | 'Investigador Acadêmico (Rigor Total)'
+  | 'Madureza & Sabedoria (Sênior / Legado)';
+
+export type FontSizeMode = 'normal' | 'large' | 'extralarge';
+export type ThemeMode = 'slate' | 'parchment' | 'twilight';
+
 export interface DialogueMessage {
   id: string;
   role: 'user' | 'sophia';
   content: string;
   timestamp: string;
-  actionContext?: 'stress_test' | 'fallacy_audit' | 'counterargument' | 'thesis_elevation' | 'concept_map' | 'direct_dialogue';
+  queryClassification?: string;
+  deducedProfile?: string;
+  actionContext?: 'stress_test' | 'fallacy_audit' | 'counterargument' | 'thesis_elevation' | 'concept_map' | 'dissection' | 'direct_dialogue';
 }
 
 export type DocumentType =
   | 'Ensaio Acadêmico'
+  | 'Ensaio Pedagógico'
   | 'Manifesto Filosófico'
   | 'Tese Acadêmica'
+  | 'Fábula ou Diálogo Filosófico'
+  | 'Carta de Sabedoria Prática'
+  | 'Dissecação de Pensamento'
   | 'Teste de Estresse'
   | 'Auditoria de Falácias'
   | 'Disputa Dialética (Contra-Argumentos)'
@@ -49,6 +75,7 @@ export interface LibraryItem {
     topic?: string;
     axioms?: string[];
     school?: string;
+    targetAudience?: string;
     confidenceScore?: string;
   };
 }

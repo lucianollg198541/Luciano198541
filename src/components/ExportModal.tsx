@@ -9,7 +9,9 @@ interface Props {
   title: string;
   content: string;
   type?: string;
+  documentType?: string;
   abstract?: string;
+  tags?: string[];
 }
 
 export const ExportModal: React.FC<Props> = ({
@@ -18,8 +20,11 @@ export const ExportModal: React.FC<Props> = ({
   title,
   content,
   type = 'Tratado Filosófico',
+  documentType,
   abstract = '',
+  tags,
 }) => {
+  const effectiveType = documentType || type;
   const [activeTab, setActiveTab] = useState<'preview' | 'latex' | 'markdown'>('preview');
   const [copied, setCopied] = useState<string | null>(null);
 

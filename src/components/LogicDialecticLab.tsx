@@ -66,9 +66,10 @@ export const LogicDialecticLab: React.FC<Props> = ({
         body: JSON.stringify({ proposition: stressProposition.trim(), context: stressContext.trim() }),
       });
       const data = await res.json();
-      setStressResult(data.analysis || 'Falha ao processar teste de estresse.');
-    } catch {
-      setStressResult('Erro na conexão com o Instituto Logos.');
+      if (!res.ok || data.error) throw new Error(data.error || 'Falha ao processar teste de estresse.');
+      setStressResult(data.analysis);
+    } catch (err: any) {
+      setStressResult(`**Erro do Instituto Logos:** ${err?.message || 'Falha na conexão com o servidor.'}`);
     } finally {
       setIsLoading(false);
     }
@@ -86,9 +87,10 @@ export const LogicDialecticLab: React.FC<Props> = ({
         body: JSON.stringify({ argument: fallacyArgument.trim() }),
       });
       const data = await res.json();
-      setFallacyResult(data.report || 'Falha ao analisar falácias.');
-    } catch {
-      setFallacyResult('Erro na conexão com o Instituto Logos.');
+      if (!res.ok || data.error) throw new Error(data.error || 'Falha ao analisar falácias.');
+      setFallacyResult(data.report);
+    } catch (err: any) {
+      setFallacyResult(`**Erro do Instituto Logos:** ${err?.message || 'Falha na conexão com o servidor.'}`);
     } finally {
       setIsLoading(false);
     }
@@ -106,9 +108,10 @@ export const LogicDialecticLab: React.FC<Props> = ({
         body: JSON.stringify({ thesis: counterThesis.trim(), school: counterSchool }),
       });
       const data = await res.json();
-      setCounterResult(data.counterarguments || 'Falha ao formular contra-argumentos.');
-    } catch {
-      setCounterResult('Erro na conexão com o Instituto Logos.');
+      if (!res.ok || data.error) throw new Error(data.error || 'Falha ao formular contra-argumentos.');
+      setCounterResult(data.counterarguments);
+    } catch (err: any) {
+      setCounterResult(`**Erro do Instituto Logos:** ${err?.message || 'Falha na conexão com o servidor.'}`);
     } finally {
       setIsLoading(false);
     }
@@ -126,9 +129,10 @@ export const LogicDialecticLab: React.FC<Props> = ({
         body: JSON.stringify({ theoryA: theoryA.trim(), theoryB: theoryB.trim(), focusDimension: compareDimension.trim() }),
       });
       const data = await res.json();
-      setCompareResult(data.comparison || 'Falha ao comparar sistemas filosóficos.');
-    } catch {
-      setCompareResult('Erro na conexão com o Instituto Logos.');
+      if (!res.ok || data.error) throw new Error(data.error || 'Falha ao comparar sistemas filosóficos.');
+      setCompareResult(data.comparison);
+    } catch (err: any) {
+      setCompareResult(`**Erro do Instituto Logos:** ${err?.message || 'Falha na conexão com o servidor.'}`);
     } finally {
       setIsLoading(false);
     }
