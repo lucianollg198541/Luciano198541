@@ -1,0 +1,6 @@
+{
+  "name": "Logos Institute — Sophia Virtual Philosopher",
+  "description": "Advanced reasoning platform and dialectical laboratory directed by Sophia, chief virtual philosopher of the Logos Institute. Formal logic, systemic stress tests, thesis generation, and philosophical library.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
