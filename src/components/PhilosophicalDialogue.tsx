@@ -63,6 +63,7 @@ export const PhilosophicalDialogue: React.FC<Props> = ({
   const [inputText, setInputText] = useState('');
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [showPremisesDrawer, setShowPremisesDrawer] = useState(false);
+  const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
   const [selectedClassification, setSelectedClassification] = useState<string | null>(null);
   const [newPremiseStatement, setNewPremiseStatement] = useState('');
   const [newPremiseCategory, setNewPremiseCategory] = useState<PhilosophicalPremise['category']>('Ontologia');
@@ -87,15 +88,22 @@ export const PhilosophicalDialogue: React.FC<Props> = ({
 
   const stripClientMetadata = (text: string): string => {
     if (!text) return '';
-    return text
-      .replace(/^\s*\*\*\[Perfil Deduzido:[^\]]+\]\*\*\s*/gim, '')
-      .replace(/^\s*\*\*\[Classificação da Consulta:[^\]]+\]\*\*\s*/gim, '')
-      .replace(/^\s*\[Perfil Deduzido:[^\]]+\]\s*/gim, '')
-      .replace(/^\s*\[Classificação da Consulta:[^\]]+\]\s*/gim, '')
-      .replace(/^\s*\[Perfil Selecionado pelo Usuário:[^\]]+\]\s*/gim, '')
-      .replace(/^\s*\[Perfil:[^\]]+\]\s*/gim, '')
-      .replace(/^\s*\[Classificação:[^\]]+\]\s*/gim, '')
-      .trim();
+    let cleaned = text;
+
+    // Remove lines that start with metadata tags or classification labels
+    cleaned = cleaned.replace(/^[ \t]*(\*{1,2}|_{1,2})?\[?(Perfil Deduzido|Classificação da Consulta|Perfil Selecionado|Lente Temática|Perfil|Classificação|Perfil do Interlocutor|Status Epistêmico)[^\]\n]*\]?(\*{1,2}|_{1,2})?:?[^\n]*(\r?\n)?/gim, '');
+
+    // Strip inline bracketed tags if any leaked into the text
+    cleaned = cleaned.replace(/\[Perfil Deduzido:[^\]]+\]/gi, '');
+    cleaned = cleaned.replace(/\[Classificação da Consulta:[^\]]+\]/gi, '');
+    cleaned = cleaned.replace(/\[Perfil Selecionado pelo Usuário:[^\]]+\]/gi, '');
+    cleaned = cleaned.replace(/\[Lente Temática Solicitada:[^\]]+\]/gi, '');
+    cleaned = cleaned.replace(/\[Axiomas Ativos no Sistema do Interlocutor\]:?/gi, '');
+    cleaned = cleaned.replace(/\[Linhagem Intelectual[^\]]*\]:?/gi, '');
+    cleaned = cleaned.replace(/\[Revisões Formais[^\]]*\]:?/gi, '');
+    cleaned = cleaned.replace(/\[Mensagem do Interlocutor\]:?/gi, '');
+
+    return cleaned.trim();
   };
 
   const handleCreatePremise = (e: React.FormEvent) => {
@@ -202,7 +210,7 @@ export const PhilosophicalDialogue: React.FC<Props> = ({
             </button>
 
             <button
-              onClick={onClearHistory}
+              onClick={() => setShowClearConfirmModal(true)}
               disabled={messages.length === 0}
               className="p-1.5 rounded-lg text-stone-500 hover:text-rose-400 hover:bg-stone-950 disabled:opacity-30 transition"
               title="Reiniciar diálogo mantendo a memória dos axiomas"
@@ -346,7 +354,7 @@ export const PhilosophicalDialogue: React.FC<Props> = ({
             <div className="flex flex-col items-start space-y-2">
               <div className="flex items-center space-x-2 text-[10px] font-mono text-amber-400/90">
                 <Sparkles className="w-3.5 h-3.5 animate-spin" />
-                <span>Sophia está examinando as premissas e deduzindo seu perfil...</span>
+                <span>Sophia está meditando sobre a questão com acolhimento e rigor filosófico...</span>
               </div>
               <div className="p-4 rounded-2xl bg-stone-950/80 border border-stone-850 text-stone-400 text-xs flex items-center space-x-3">
                 <div className="flex space-x-1">
@@ -354,7 +362,7 @@ export const PhilosophicalDialogue: React.FC<Props> = ({
                   <div className="w-2 h-2 rounded-full bg-amber-400 animate-bounce [animation-delay:0.2s]" />
                   <div className="w-2 h-2 rounded-full bg-amber-400 animate-bounce [animation-delay:0.4s]" />
                 </div>
-                <span>Lapidando parágrafos de prosa límpida e harmoniosa...</span>
+                <span>Lapidando parágrafos de prosa límpida, orgânica e harmoniosa...</span>
               </div>
             </div>
           )}
@@ -471,6 +479,48 @@ export const PhilosophicalDialogue: React.FC<Props> = ({
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* In-App Confirmation Modal: Clear Dialogue History (No window.confirm!) */}
+      {showClearConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-stone-900 border border-stone-700/80 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-start space-x-3.5">
+              <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-classical font-bold text-stone-100">
+                  Reiniciar Diálogo Dialético?
+                </h3>
+                <p className="text-xs text-stone-400 mt-1 leading-relaxed">
+                  As mensagens da conversa atual serão limpas. Toda a memória de axiomas, postulados e o acervo do Corpus Filosófico permanecerão intactos.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirmModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-medium text-stone-300 hover:text-stone-100 hover:bg-stone-800 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowClearConfirmModal(false);
+                  onClearHistory();
+                }}
+                className="flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition shadow-sm"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Sim, Reiniciar Diálogo</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

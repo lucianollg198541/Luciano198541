@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Copy, Download, Check, FileText, Code, Eye, X, BookOpen } from 'lucide-react';
+import { Copy, Download, Check, FileText, Code, Eye, X, BookOpen, Braces } from 'lucide-react';
 import { generateFullLatexDocument, downloadFile } from '../utils/latexExport';
 import { PhilosophicalMarkdown } from './PhilosophicalMarkdown';
 
@@ -22,11 +22,27 @@ export const ExportModal: React.FC<Props> = ({
   type = 'Tratado Filosófico',
   documentType,
   abstract = '',
-  tags,
+  tags = [],
 }) => {
   const effectiveType = documentType || type;
-  const [activeTab, setActiveTab] = useState<'preview' | 'latex' | 'markdown'>('preview');
+  const [activeTab, setActiveTab] = useState<'preview' | 'latex' | 'markdown' | 'json'>('preview');
   const [copied, setCopied] = useState<string | null>(null);
+
+  const jsonCode = useMemo(() => {
+    return JSON.stringify(
+      {
+        title,
+        type: effectiveType,
+        abstract,
+        content,
+        tags,
+        exportedAt: new Date().toISOString(),
+        institution: 'Logos Institute — Sophia Virtual Philosopher',
+      },
+      null,
+      2
+    );
+  }, [title, effectiveType, abstract, content, tags]);
 
   const latexCode = useMemo(() => {
     return generateFullLatexDocument({
@@ -53,6 +69,11 @@ export const ExportModal: React.FC<Props> = ({
   const handleDownloadLatex = () => {
     const filename = `${title.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'logos_document'}.tex`;
     downloadFile(filename, latexCode, 'application/x-latex;charset=utf-8');
+  };
+
+  const handleDownloadJson = () => {
+    const filename = `${title.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'logos_document'}.json`;
+    downloadFile(filename, jsonCode, 'application/json;charset=utf-8');
   };
 
   return (
@@ -89,7 +110,18 @@ export const ExportModal: React.FC<Props> = ({
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>Visualização Tipográfica</span>
+              <span>Visualização</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('json')}
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                activeTab === 'json'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                  : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'
+              }`}
+            >
+              <Braces className="w-3.5 h-3.5" />
+              <span>JSON (.json)</span>
             </button>
             <button
               onClick={() => setActiveTab('latex')}
@@ -100,7 +132,7 @@ export const ExportModal: React.FC<Props> = ({
               }`}
             >
               <Code className="w-3.5 h-3.5" />
-              <span>Código LaTeX (.tex)</span>
+              <span>LaTeX (.tex)</span>
             </button>
             <button
               onClick={() => setActiveTab('markdown')}
@@ -117,6 +149,24 @@ export const ExportModal: React.FC<Props> = ({
 
           {/* Quick Actions */}
           <div className="flex items-center space-x-2">
+            {activeTab === 'json' && (
+              <>
+                <button
+                  onClick={() => handleCopy(jsonCode, 'json')}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-stone-800 text-stone-200 hover:bg-stone-700 transition"
+                >
+                  {copied === 'json' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copied === 'json' ? 'Copiado!' : 'Copiar JSON'}</span>
+                </button>
+                <button
+                  onClick={handleDownloadJson}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-amber-600/90 text-stone-900 font-semibold hover:bg-amber-500 transition"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Baixar .json</span>
+                </button>
+              </>
+            )}
             {activeTab === 'latex' && (
               <>
                 <button
@@ -156,6 +206,13 @@ export const ExportModal: React.FC<Props> = ({
             {activeTab === 'preview' && (
               <div className="flex items-center space-x-2">
                 <button
+                  onClick={handleDownloadJson}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-stone-800 text-stone-300 hover:bg-stone-700 transition"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Baixar .json</span>
+                </button>
+                <button
                   onClick={handleDownloadMarkdown}
                   className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-stone-800 text-stone-300 hover:bg-stone-700 transition"
                 >
@@ -184,6 +241,14 @@ export const ExportModal: React.FC<Props> = ({
                 <p className="text-xs font-mono text-stone-400 mt-2">Sophia, Virtual Philosopher &bull; Logos Academic Archive</p>
               </div>
               <PhilosophicalMarkdown content={content} />
+            </div>
+          )}
+
+          {activeTab === 'json' && (
+            <div className="relative">
+              <pre className="font-logic text-xs text-amber-200/90 bg-stone-950 p-5 rounded-lg border border-stone-800 overflow-x-auto whitespace-pre-wrap selection:bg-amber-900/50">
+                <code>{jsonCode}</code>
+              </pre>
             </div>
           )}
 

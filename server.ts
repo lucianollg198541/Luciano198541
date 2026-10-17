@@ -28,20 +28,27 @@ const ai = apiKey
   : null;
 
 const SOPHIA_SYSTEM_INSTRUCTION = `
-You are Sophia, the chief virtual philosopher and master educator of the Logos Institute, a digital philosophical institution and advanced reasoning platform. Your framework is strictly grounded in rationalism, formal logic, epistemology, philosophy of science, and rigorous argumentative methodology. You operate with absolute intellectual rigor, avoiding cognitive biases, toxic positivity, or ungrounded speculation.
+You are Sophia, the chief virtual philosopher, researcher, and master educator of the Logos Institute, a digital philosophical institution and advanced reasoning platform. Your framework is strictly grounded in rationalism, formal logic, epistemology, philosophy of science, and rigorous argumentative methodology. You operate with absolute intellectual rigor, avoiding cognitive biases, toxic positivity, or ungrounded speculation.
 
 ## Core Directives & Persona
 1. **Epistemological Rigor:** Prioritize deductive reasoning, the principles of classical logic (identity, non-contradiction, excluded middle), and scientific methodology. Treat initial user ideas as legitimate conjectures in need of structural development.
-2. **The Educator's Algorithm (Silent Profile Tuning):** 
-   - **Zero Explicit Labeling:** NEVER declare, print, or expose your deduced user profile, internal classifications, or intent heuristics. Do NOT include tags like [Perfil Deduzido], [Classificação da Consulta], or any internal categorization in your output. Never break the epistemic fourth wall.
-   - **Silent Adaptation:** Implicitly and dynamically adapt your vocabulary, depth, examples, and structural complexity to match the user's cognitive level, age, and background. You must be able to seamlessly transition from educating children and youths with accessible analogies to debating complex academic subjects with scholars.
-   - **Neutral Initialization:** Always initiate conversations from a balanced, highly polished, and stable linguistic baseline.
-   - **Progressive Refinement:** Refine your understanding of the user's capability gradually throughout the dialogue. Avoid premature conclusions. Use gradual hypotheses. Only explain your profile assessment if explicitly requested by the user.
-3. **Dialectical Posture & Intellectual Partnership:** 
+2. **Researcher with Living Historical Memory (Corpus Filosófico Logos):**
+   - You act not merely as an ephemeral chat agent, but as an intellectual archivist and research companion with historical memory.
+   - You maintain an active consciousness of the interlocutor's intellectual lineage: past formulations, established axioms, previous revisions, and conceptual milestones.
+   - When relevant to the argument, organically cite or anchor your reasoning in the interlocutor's earlier formulations ("Conforme você postulou anteriormente ao tratar de...", "Em sintonia com o princípio estabelecido no seu acervo...").
+   - Actively identify epistemic tensions or potential contradictions between newly introduced conjectures and foundational premises.
+   - Proactively suggest moments where the interlocutor may wish to formalize a conceptual revision (e.g., from v1.0 to v1.1), documenting how a premise evolved.
+3. **The Educator's Algorithm & Absolute Prohibition of Breaking the Epistemic Fourth Wall (Zero Explicit Labeling):** 
+   - **Zero Explicit Labeling:** UNDER NO CIRCUMSTANCES shall you declare, print, or expose your deduced user profile, internal classifications, audience tags, or intent heuristics. Do NOT include tags like [Perfil Deduzido], [Classificação da Consulta], **[Perfil Deduzido]**, or any internal classification in your output. The epistemic fourth wall must remain strictly inviolate.
+   - **Silent Cognitive Adaptation ("de mamando a caducando"):** Adapt silently, organically, and dynamically your vocabulary, depth, metaphors, and structural complexity to match the interlocutor's level. For curious youths, children, or everyday beginners, welcome them with intellectual warmth, wonder, and accessible analogies (e.g., walking through a sunlit garden, ripples in water, building blocks). For senior scholars or formal logicians, seamlessly deploy formal notation, ontological precision, and philosophical nuance.
+   - **Anti-Bureaucratic Demeanor:** Never act like a cold, bureaucratic classification machine that announces its analysis before answering. Begin directly with a welcoming, lucid, and engaging response. The deduction of profile must act exclusively as an invisible internal cog in your cognitive backend, and must NEVER be printed to the interface.
+   - **Estabilidade do Idioma & Elegância Dialética:** Cultivate fluent, pleasant, and erudite Portuguese that invites philosophical reflection without pedantry or artificial barriers.
+   - **Neutral Initialization & Progressive Refinement:** Always initiate from a balanced, highly polished, and stable linguistic baseline, refining your hypotheses quietly as dialogue progresses. Only discuss your profile assessment if explicitly interrogated by the user.
+4. **Dialectical Posture & Intellectual Partnership:** 
    - **Constructive Inquiring:** You are neither a sycophant nor an oppressive dogmatist. You are a rigorous, yet empathetic sparring partner. Understand the nuances of human difficulty in formulating sound reasoning.
    - **Error Correction without Coercion:** Point out logical flaws and fallacies with objective, clinical precision based on formal logic. Never lecture, condescend, or adopt a competitive stance.
    - **Amplification of Viable Insights:** When an idea is logically sound, shift from critique to construction. Help map systemic consequences, anchor in frameworks, and elevate into a formal thesis.
-4. **Communication Style:** Maintain a pragmatic, analytical, direct, and erudite tone in elegant, stable Portuguese. Produce paragraphs that are structurally stable, fluid, and pleasant to read. Avoid being overly epistemic or pedantic when the user requires an accessible approach.
+5. **Communication Style:** Maintain a pragmatic, analytical, direct, and erudite tone in elegant, stable Portuguese ("estabilidade do idioma"). Produce paragraphs that are structurally stable, fluid, and pleasant to read. Avoid being overly epistemic or pedantic when the user requires an accessible approach.
 
 ## Analytical Protocol (Systemic Stress Test)
 Before concluding any deep philosophical analysis or thesis evaluation, systematically execute and present:
@@ -72,15 +79,22 @@ User ideas are presumed to belong to an evolving philosophical system. When enco
 
 function stripMetadataTags(text: string): string {
   if (!text) return '';
-  return text
-    .replace(/^\s*\*\*\[Perfil Deduzido:[^\]]+\]\*\*\s*/gim, '')
-    .replace(/^\s*\*\*\[Classificação da Consulta:[^\]]+\]\*\*\s*/gim, '')
-    .replace(/^\s*\[Perfil Deduzido:[^\]]+\]\s*/gim, '')
-    .replace(/^\s*\[Classificação da Consulta:[^\]]+\]\s*/gim, '')
-    .replace(/^\s*\[Perfil Selecionado pelo Usuário:[^\]]+\]\s*/gim, '')
-    .replace(/^\s*\[Perfil:[^\]]+\]\s*/gim, '')
-    .replace(/^\s*\[Classificação:[^\]]+\]\s*/gim, '')
-    .trim();
+  let cleaned = text;
+
+  // Remove lines that start with metadata tags or classification labels
+  cleaned = cleaned.replace(/^[ \t]*(\*{1,2}|_{1,2})?\[?(Perfil Deduzido|Classificação da Consulta|Perfil Selecionado|Lente Temática|Perfil|Classificação|Perfil do Interlocutor|Status Epistêmico)[^\]\n]*\]?(\*{1,2}|_{1,2})?:?[^\n]*(\r?\n)?/gim, '');
+
+  // Strip inline bracketed tags if any leaked into the text
+  cleaned = cleaned.replace(/\[Perfil Deduzido:[^\]]+\]/gi, '');
+  cleaned = cleaned.replace(/\[Classificação da Consulta:[^\]]+\]/gi, '');
+  cleaned = cleaned.replace(/\[Perfil Selecionado pelo Usuário:[^\]]+\]/gi, '');
+  cleaned = cleaned.replace(/\[Lente Temática Solicitada:[^\]]+\]/gi, '');
+  cleaned = cleaned.replace(/\[Axiomas Ativos no Sistema do Interlocutor\]:?/gi, '');
+  cleaned = cleaned.replace(/\[Linhagem Intelectual[^\]]*\]:?/gi, '');
+  cleaned = cleaned.replace(/\[Revisões Formais[^\]]*\]:?/gi, '');
+  cleaned = cleaned.replace(/\[Mensagem do Interlocutor\]:?/gi, '');
+
+  return cleaned.trim();
 }
 
 async function callGemini(
@@ -195,7 +209,15 @@ Assim, o caminho mais seguro e harmonioso não consiste em abraçar dogmas apres
 // 1. Dialogue & Mentorship Endpoint
 app.post('/api/sophia/chat', async (req: Request, res: Response) => {
   try {
-    const { message, history = [], activePremises = [], audienceHint, classificationHint } = req.body;
+    const {
+      message,
+      history = [],
+      activePremises = [],
+      intellectualLineage = [],
+      corpusRevisions = [],
+      audienceHint,
+      classificationHint,
+    } = req.body;
 
     if (!message || typeof message !== 'string' || !message.trim()) {
       return res.status(400).json({ error: 'Mensagem vazia fornecida a Sophia.' });
@@ -227,9 +249,25 @@ app.post('/api/sophia/chat', async (req: Request, res: Response) => {
 
     if (Array.isArray(activePremises) && activePremises.length > 0) {
       const premisesSummary = activePremises
-        .map((p: any, i: number) => `Princípio ${i + 1} (${p.category || 'Geral'}): ${p.statement}`)
+        .map((p: any, i: number) => `Princípio ${i + 1} (${p.category || 'Geral'}): ${p.statement} [Status: ${p.epistemicStatus || 'Fundacional'}]`)
         .join('\n');
       contextPrefixes.push(`[Axiomas Ativos no Sistema do Interlocutor]:\n${premisesSummary}`);
+    }
+
+    if (Array.isArray(intellectualLineage) && intellectualLineage.length > 0) {
+      const lineageSummary = intellectualLineage
+        .slice(0, 5)
+        .map((m: any) => `- ${m.type} ("${m.title}"): ${m.description || ''}`)
+        .join('\n');
+      contextPrefixes.push(`[Linhagem Intelectual & Memória Histórica do Interlocutor no Corpus]:\n${lineageSummary}`);
+    }
+
+    if (Array.isArray(corpusRevisions) && corpusRevisions.length > 0) {
+      const revSummary = corpusRevisions
+        .slice(0, 3)
+        .map((r: any) => `- ${r.targetTitle} (${r.version}): "${r.newFormulation}" (Motivo: ${r.rationale})`)
+        .join('\n');
+      contextPrefixes.push(`[Revisões Formais Recentes]:\n${revSummary}`);
     }
 
     if (contextPrefixes.length > 0) {
@@ -252,6 +290,93 @@ app.post('/api/sophia/chat', async (req: Request, res: Response) => {
     res.status(500).json({ error: err.message || 'Falha ao dialogar com Sophia.' });
   }
 });
+
+// Epistemic Tension Audit Endpoint
+app.post('/api/sophia/tension-audit', async (req: Request, res: Response) => {
+  try {
+    const { premises = [], libraryTheses = [] } = req.body;
+
+    if (!Array.isArray(premises) || premises.length === 0) {
+      return res.status(400).json({ error: 'Nenhum axioma fornecido para auditoria de tensões.' });
+    }
+
+    const premisesSummary = premises.map((p: any, idx: number) => `(${idx + 1}) [${p.category || 'Axioma'}]: "${p.statement}"`).join('\n');
+    const thesesSummary = libraryTheses.length > 0
+      ? '\nTeses Registradas:\n' + libraryTheses.map((t: any, idx: number) => `(Tese ${idx + 1}): "${t.title}" - ${t.abstract || ''}`).join('\n')
+      : '';
+
+    const prompt = `
+Como Sophia, analise o conjunto de postulados e teses do interlocutor em busca de TENSÕES EPISTÊMICAS, fricções conceituais ou contradições implícitas:
+
+POSTULADOS DO SISTEMA:
+${premisesSummary}
+${thesesSummary}
+
+Estruture a resposta em:
+## 1. Mapeamento de Coerência Sistêmica
+Avalie em que medida os princípios se reforçam mutuamente.
+
+## 2. Tensões Epistêmicas Detectadas (Fricções ou Antinomias)
+Identifique onde dois postulados parecem puxar para direções opostas ou criar paradoxos teóricos ou práticos.
+
+## 3. Síntese Dialética & Caminhos de Harmonização (Aufhebung)
+Proponha como reconciliar essas tensões sem abandonar o rigor da lógica.
+
+## 4. Sugestão de Revisão Formal
+Formule um exemplo de revisão conceitual (ex: v1.1) que refinaria um dos princípios para eliminar a fricção detectada.
+`;
+
+    const report = await callGemini(prompt);
+    res.json({ report });
+  } catch (err: any) {
+    console.error('Error in /api/sophia/tension-audit:', err);
+    res.status(500).json({ error: err.message || 'Falha ao auditar tensões epistêmicas.' });
+  }
+});
+
+// Formalize Revision Synthesis Endpoint
+app.post('/api/sophia/revision-synthesis', async (req: Request, res: Response) => {
+  try {
+    const { originalStatement, proposedChange, rationale } = req.body;
+
+    if (!originalStatement || !originalStatement.trim()) {
+      return res.status(400).json({ error: 'Enunciado original é obrigatório.' });
+    }
+
+    const prompt = `
+Como Sophia, auxilie o interlocutor a formalizar uma REVISÃO CONCEITUAL FORMAL para o Corpus Filosófico Logos.
+
+ENUNCIADO ORIGINAL (Versão anterior):
+"${originalStatement.trim()}"
+
+DIREÇÃO DE MUDANÇA PROPOSTA PELO INTERLOCUTOR:
+"${(proposedChange || '').trim() || 'Aprimoramento ontológico e formal'}"
+
+MOTIVAÇÃO OU DIFICULDADE OBSERVADA:
+"${(rationale || '').trim() || 'Evitar antinomias e conferir maior precisão epistêmica'}"
+
+Retorne uma estrutura límpida e nobre:
+## 1. Diagnóstico da Formulação Anterior
+Por que a versão anterior necessitava de amadurecimento?
+
+## 2. Enunciado Canônico Refinado (Nova Versão)
+A nova redação axiomática, precisa, estável e livre de ambiguidades.
+
+## 3. Fórmula Lógica em LaTeX (se aplicável)
+A representação formal correspondente.
+
+## 4. Delta Epistêmico & Ganhos Sistêmicos
+O que o sistema intelectual ganha com esta revisão formal.
+`;
+
+    const revisionDoc = await callGemini(prompt);
+    res.json({ revisionDoc });
+  } catch (err: any) {
+    console.error('Error in /api/sophia/revision-synthesis:', err);
+    res.status(500).json({ error: err.message || 'Falha ao sintetizar revisão formal.' });
+  }
+});
+
 
 // 2. Idea & Dilemma Dissection Endpoint (Dissecador de Ideias)
 app.post('/api/sophia/dissect', async (req: Request, res: Response) => {
@@ -576,7 +701,10 @@ async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);

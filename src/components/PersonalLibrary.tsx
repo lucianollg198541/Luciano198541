@@ -18,6 +18,7 @@ import {
   X,
   Sparkles,
   ShieldAlert,
+  ArrowLeft,
 } from 'lucide-react';
 import { LibraryItem, DocumentType, EpistemicStatus } from '../types/philosophical';
 import { PhilosophicalMarkdown } from './PhilosophicalMarkdown';
@@ -26,20 +27,29 @@ import { downloadFile } from '../utils/latexExport';
 
 interface Props {
   items: LibraryItem[];
+  libraryItems?: LibraryItem[];
   onDeleteItem: (id: string) => void;
   onAddItem: (item: LibraryItem) => void;
   onSelectForInspection?: (item: LibraryItem) => void;
+  onPruneStressTests?: (keepId: string) => void;
 }
 
 export const PersonalLibrary: React.FC<Props> = ({
-  items,
+  items: propItems,
+  libraryItems: propLibraryItems,
   onDeleteItem,
   onAddItem,
+  onPruneStressTests,
 }) => {
+  // Use libraryItems as the primary data source object
+  const libraryItems = propLibraryItems || propItems;
+  const items = libraryItems;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(items[0] || null);
   const [exportModalItem, setExportModalItem] = useState<LibraryItem | null>(null);
+  const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
 
   // In-app modal confirmation states (replacing window.confirm to function in iframes)
   const [itemToDelete, setItemToDelete] = useState<LibraryItem | null>(null);
@@ -77,11 +87,29 @@ export const PersonalLibrary: React.FC<Props> = ({
     return matchesSearch && matchesType;
   });
 
-  const handleExportBackup = () => {
-    const json = JSON.stringify(items, null, 2);
-    downloadFile(`logos_biblioteca_backup_${Date.now()}.json`, json, 'application/json');
-    setToastMessage('Backup exportado com sucesso.');
+  // Exportar Biblioteca: baixa todos os itens salvos em arquivo JSON local via Blob
+  const handleExportLibrary = () => {
+    if (!libraryItems || libraryItems.length === 0) {
+      setToastMessage('A biblioteca está vazia no momento.');
+      return;
+    }
+
+    // Utiliza o objeto libraryItems como fonte de dados e cria um blob para o download
+    const jsonString = JSON.stringify(libraryItems, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `libraryItems_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setToastMessage(`Biblioteca exportada com sucesso! (${libraryItems.length} itens salvos em arquivo JSON)`);
   };
+
+  const handleExportBackup = handleExportLibrary;
 
   const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,17 +119,23 @@ export const PersonalLibrary: React.FC<Props> = ({
     reader.onload = (event) => {
       try {
         const parsed = JSON.parse(event.target?.result as string);
-        if (Array.isArray(parsed)) {
+        const importedList: any[] = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray(parsed?.items)
+          ? parsed.items
+          : null;
+
+        if (Array.isArray(importedList) && importedList.length > 0) {
           let count = 0;
-          parsed.forEach((item) => {
+          importedList.forEach((item) => {
             if (item && item.id && item.title) {
               onAddItem(item);
               count++;
             }
           });
-          setToastMessage(`${count} documentos restaurados com sucesso.`);
+          setToastMessage(`${count} documentos restaurados com sucesso a partir do arquivo JSON.`);
         } else {
-          setToastMessage('Formato de arquivo inválido: esperado um array JSON.');
+          setToastMessage('Formato de arquivo inválido: nenhum documento válido encontrado no JSON.');
         }
       } catch (err) {
         setToastMessage('Falha ao processar arquivo JSON de backup.');
@@ -122,8 +156,12 @@ export const PersonalLibrary: React.FC<Props> = ({
   };
 
   const handlePruneStressTests = (keepId: string) => {
-    const targetsToDelete = stressTestItems.filter((item) => item.id !== keepId);
-    targetsToDelete.forEach((item) => onDeleteItem(item.id));
+    if (onPruneStressTests) {
+      onPruneStressTests(keepId);
+    } else {
+      const targetsToDelete = stressTestItems.filter((item) => item.id !== keepId);
+      targetsToDelete.forEach((item) => onDeleteItem(item.id));
+    }
 
     // Ensure the preserved item is selected
     const preserved = stressTestItems.find((item) => item.id === keepId);
@@ -133,7 +171,7 @@ export const PersonalLibrary: React.FC<Props> = ({
 
     setShowStressPruneModal(false);
     setToastMessage(
-      `Excluídos ${targetsToDelete.length} teste(s) de estresse. Apenas 1 foi preservado no acervo.`
+      `Excedentes descartados. Apenas 1 teste de estresse foi preservado no acervo.`
     );
   };
 
@@ -183,24 +221,33 @@ export const PersonalLibrary: React.FC<Props> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Library className="w-5 h-5 text-amber-400" />
-              <h2 className="text-base font-classical font-semibold text-stone-100">Biblioteca do Logos</h2>
+              <div>
+                <h2 className="text-base font-classical font-semibold text-stone-100">Biblioteca do Logos</h2>
+                <p className="text-[10px] text-stone-400 font-mono">{items.length} documento(s) no acervo</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-1">
-              <label
-                title="Restaurar backup JSON"
-                className="p-1.5 text-stone-400 hover:text-stone-200 hover:bg-stone-800 rounded cursor-pointer transition"
-              >
-                <Upload className="w-4 h-4" />
-                <input type="file" accept=".json" onChange={handleImportBackup} className="hidden" />
-              </label>
-              <button
-                onClick={handleExportBackup}
-                title="Exportar backup JSON da biblioteca"
-                className="p-1.5 text-stone-400 hover:text-stone-200 hover:bg-stone-800 rounded transition"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-            </div>
+          </div>
+
+          {/* Dedicated Export & Backup Controls */}
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-stone-900/80 border border-stone-800">
+            <button
+              type="button"
+              onClick={handleExportLibrary}
+              className="flex-1 flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 hover:text-amber-200 transition shadow-sm"
+              title="Baixar todos os itens salvos em um arquivo JSON local para backup de segurança"
+              aria-label="Exportar Biblioteca"
+            >
+              <Download className="w-3.5 h-3.5 text-amber-400" />
+              <span>Exportar Biblioteca</span>
+            </button>
+            <label
+              title="Restaurar documentos de um arquivo de backup JSON"
+              className="flex items-center space-x-1 py-1.5 px-2.5 rounded-lg text-xs font-medium bg-stone-850 hover:bg-stone-800 text-stone-300 hover:text-stone-100 border border-stone-700/60 cursor-pointer transition shrink-0"
+            >
+              <Upload className="w-3.5 h-3.5 text-stone-400" />
+              <span className="hidden sm:inline">Restaurar</span>
+              <input type="file" accept=".json" onChange={handleImportBackup} className="hidden" />
+            </label>
           </div>
 
           {/* Search bar */}
@@ -271,27 +318,37 @@ export const PersonalLibrary: React.FC<Props> = ({
 
           {/* Special Helper Banner when multiple stress tests exist */}
           {stressTestItems.length > 1 && (
-            <div className="p-2.5 rounded-lg bg-blue-950/40 border border-blue-800/40 space-y-1.5 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between text-[11px] text-blue-300 font-medium">
+            <div className="p-3 rounded-xl bg-blue-950/50 border border-blue-800/60 space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between text-xs text-blue-200 font-semibold">
                 <span className="flex items-center space-x-1.5">
-                  <ShieldAlert className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span>{stressTestItems.length} Testes de Estresse gravados</span>
+                  <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{stressTestItems.length} Testes de Estresse Gravados</span>
                 </span>
               </div>
-              <p className="text-[10px] text-stone-400">
-                Você pode deixar apenas um teste ativo e descartar os excedentes.
+              <p className="text-[11px] text-stone-300 leading-relaxed">
+                Você pode deixar somente 1 teste ativo no acervo e descartar os outros {stressTestItems.length - 1} agora mesmo:
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setStressTestToKeepId(stressTestItems[0].id);
-                  setShowStressPruneModal(true);
-                }}
-                className="w-full py-1 px-2 rounded-md bg-blue-600/25 hover:bg-blue-600/40 border border-blue-500/40 text-[11px] font-semibold text-blue-200 transition flex items-center justify-center space-x-1.5"
-              >
-                <Trash2 className="w-3 h-3 text-rose-400" />
-                <span>Deixar apenas 1 Teste de Estresse</span>
-              </button>
+              <div className="flex flex-col gap-1.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => handlePruneStressTests(stressTestItems[0].id)}
+                  className="w-full py-1.5 px-2.5 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/60 text-xs font-semibold text-rose-100 transition flex items-center justify-center space-x-1.5 shadow-sm"
+                  title="Preservar o teste mais recente e descartar os excedentes"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-300" />
+                  <span>Deixar Somente 1 (Manter Mais Recente)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStressTestToKeepId(stressTestItems[0].id);
+                    setShowStressPruneModal(true);
+                  }}
+                  className="w-full py-1 px-2 rounded-lg bg-stone-900 hover:bg-stone-850 border border-stone-800 text-[11px] text-stone-300 hover:text-stone-100 transition flex items-center justify-center space-x-1"
+                >
+                  <span>Escolher manualmente qual dos {stressTestItems.length} manter...</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -331,10 +388,14 @@ export const PersonalLibrary: React.FC<Props> = ({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setItemToDelete(item);
+                          if (e.shiftKey) {
+                            handleConfirmSingleDelete(item.id);
+                          } else {
+                            setItemToDelete(item);
+                          }
                         }}
-                        className="p-1 rounded text-stone-500 hover:text-rose-400 hover:bg-stone-800 transition"
-                        title={`Excluir "${item.title}"`}
+                        className="p-1.5 rounded-lg text-stone-400 hover:text-rose-400 hover:bg-rose-950/40 hover:border-rose-800/50 border border-transparent transition"
+                        title={`Excluir "${item.title}" (Shift+Clique para exclusão imediata sem confirmação)`}
                         aria-label={`Excluir ${item.title}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -397,11 +458,23 @@ export const PersonalLibrary: React.FC<Props> = ({
               <div className="flex items-center space-x-2 shrink-0">
                 <button
                   type="button"
+                  onClick={handleExportLibrary}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 hover:bg-stone-850 text-amber-300 border border-stone-800 hover:border-amber-500/40 transition shadow-sm"
+                  title="Baixar todos os itens salvos em um arquivo JSON local para backup de segurança"
+                  aria-label="Exportar Biblioteca"
+                >
+                  <Download className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Exportar Biblioteca</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setExportModalItem(selectedItem)}
                   className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-stone-950 transition shadow-sm"
+                  title="Exportar este documento individual em LaTeX ou Markdown"
                 >
                   <Share2 className="w-3.5 h-3.5" />
-                  <span>Exportar LaTeX / MD</span>
+                  <span>Exportar Documento</span>
                 </button>
 
                 {/* Prominent Trash Button in Detail Toolbar */}
@@ -588,6 +661,20 @@ export const PersonalLibrary: React.FC<Props> = ({
           type={exportModalItem.type}
           abstract={exportModalItem.abstract}
         />
+      )}
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 px-4 py-2.5 rounded-xl bg-stone-900 border border-stone-700 text-stone-100 text-xs shadow-2xl animate-in slide-in-from-bottom-2 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="font-medium">{toastMessage}</span>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="ml-2 text-stone-400 hover:text-stone-200 p-0.5 rounded transition"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
       )}
     </div>
   );

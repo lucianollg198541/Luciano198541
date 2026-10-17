@@ -102,3 +102,48 @@ export interface ConceptMapData {
   nodes: ConceptNode[];
   edges: ConceptEdge[];
 }
+
+export interface CorpusRevision {
+  id: string;
+  targetId: string;
+  targetTitle: string;
+  version: string; // e.g. "v1.1", "v2.0"
+  previousFormulation: string;
+  newFormulation: string;
+  rationale: string;
+  epistemicDelta: string;
+  timestamp: string;
+}
+
+export interface HistoricalTradition {
+  id: string;
+  name: string;
+  school: string;
+  period: string;
+  corePrinciple: string;
+  canonicalFormula?: string;
+  fundamentalThesis: string;
+  educationalAnalogy: string;
+  keyAuthors: string[];
+}
+
+export interface EpistemicTension {
+  id: string;
+  premiseAId: string;
+  premiseBId: string;
+  premiseATitle: string;
+  premiseBTitle: string;
+  description: string;
+  status: 'Ativa' | 'Sintetizada' | 'Sob Exame';
+  proposedSynthesis?: string;
+}
+
+export interface IntellectualMilestone {
+  id: string;
+  type: 'Axioma Postulado' | 'Tese Formulada' | 'Revisão Epistêmica' | 'Teste Concluído' | 'Tensão Superada';
+  title: string;
+  description: string;
+  timestamp: string;
+  referenceId?: string;
+}
+
